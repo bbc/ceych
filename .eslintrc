@@ -1,0 +1,19 @@
+{
+  "extends": "eslint:recommended",
+  "env": {
+    "node": true,
+    "mocha": true,
+    "es6": true
+  },
+  "rules": {
+    "quotes": [2, "single"],
+    "eqeqeq": 2,
+    "no-var": 2,
+    "one-var": [2, "never"],
+    "prefer-const": 2,
+    "semi": 2,
+    "strict": [2, "global"],
+    "arrow-parens": 2,
+    "prefer-arrow-callback": 2
+  }
+}

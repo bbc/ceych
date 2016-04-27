@@ -50,6 +50,13 @@ describe('ceych', () => {
       assert.strictEqual(ceych.defaultTTL, 30);
     });
 
+    it('uses the default TTL when defaultTTL is undefined', () => {
+      const ceych = new Ceych({
+        defaultTTL: undefined
+      });
+      assert.strictEqual(ceych.defaultTTL, 30);
+    });
+
     it('throws an error when the default TTL < 0', () => {
       assert.throws(() => {
         new Ceych({

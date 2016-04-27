@@ -17,6 +17,14 @@
   "engines": {
     "node": ">=4.0.0"
   },
+  "keywords": [
+    "ceych",
+    "cache",
+    "wrapper",
+    "memoize",
+    "client",
+    "stats"
+  ],
   "dependencies": {
     "catbox": "^7.1.0",
     "catbox-memory": "^2.0.1",

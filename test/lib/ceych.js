@@ -28,14 +28,12 @@ describe('ceych', () => {
     sandbox.restore();
   });
 
-  it('throws an error if starting the cache client fails', () => {
+  it('does not error if cache client fails', () => {
     sandbox.stub(cacheClient, 'start').yields(new Error('DB connection failure'));
 
-    assert.throws(() => {
-      new Ceych({
-        cacheClient: cacheClient
-      });
-    }, Error, 'Failed to initialize cache client: DB connection failure');
+    new Ceych({
+      cacheClient: cacheClient
+    });
   });
 
   describe('validation', () => {

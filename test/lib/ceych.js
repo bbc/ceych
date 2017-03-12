@@ -70,13 +70,13 @@ describe('ceych', () => {
       it('must have at least 1 argument', () => {
         assert.throw(() => {
           ceych.wrap();
-        }, Error, 'Can only wrap a function, received nothing');
+        }, Error, 'Can only wrap a function or a promise, received nothing');
       });
 
       it('only takes a function as the first argument', () => {
         assert.throw(() => {
           ceych.wrap(1);
-        }, Error, 'Can only wrap a function, received [1]');
+        }, Error, 'Can only wrap a function or a promise, received [1]');
       });
 
       it('sets the TTL if the second argument is an integer', (done) => {
@@ -137,6 +137,93 @@ describe('ceych', () => {
         });
       });
     });
+
+    describe('Callbacks', () => {
+      it('returns a function that accepts a callback', (done) => {
+        const wrappableStub = sandbox.stub().yields(null, 1, 2, 3);
+        const func = ceych.wrap(wrappableStub);
+
+        func((err, one, two, three) => {
+          assert.ifError(err);
+          assert.strictEqual(one, 1);
+          assert.strictEqual(two, 2);
+          assert.strictEqual(three, 3);
+          done();
+        });
+      });
+
+      it('it returns an error object as the first parameter to the callback', (done) => {
+        const expectedError = new Error('You never called me back');
+        const wrappableStub = sandbox.stub().yields(expectedError);
+        const func = ceych.wrap(wrappableStub);
+
+        func((err) => {
+          assert.deepEqual(err, err);
+          done();
+        }).catch(() => {
+
+        });
+      });
+    });
+
+    describe('Promises', () => {
+      it('returns a promisified function', () => {
+        const wrappableStub = sandbox.stub().yields(null, 1, 2, 3);
+        const func = ceych.wrap(wrappableStub);
+
+        return func()
+          .then((results) => {
+            assert.deepEqual(results, [1, 2, 3]);
+          }).catch((err) => {
+            assert.ifError(err);
+          });
+      });
+
+      it('accepts a promisified function to wrap', () => {
+        const wrappableStub = new Promise((resolve) => {
+          resolve([1, 2, 3]);
+        });
+
+        const func = ceych.wrap(wrappableStub);
+
+        return func()
+          .then((results) => {
+            assert.deepEqual(results, [1, 2, 3]);
+          }).catch((err) => {
+            assert.ifError(err);
+          });
+      });
+
+      it('handles errors from callback functions correctly', () => {
+        const expectedErr = new Error('Broken promises');
+        const wrappableStub = sandbox.stub().yields(expectedErr);
+        const func = ceych.wrap(wrappableStub);
+
+        return func()
+          .then(() => {
+            throw new Error('Promise should not have been resolved');
+          }).catch((err) => {
+            assert.deepEqual(err, expectedErr);
+          });
+      });
+
+      it('handles errors from promises correctly', () => {
+        const expectedError = new Error('Broken promises');
+        const wrappableStub = new Promise((resolve, reject) => {
+          reject(expectedError);
+        });
+
+        const func = ceych.wrap(wrappableStub);
+
+        return func()
+          .then(() => {
+            throw new Error('Promise should not have been resolved');
+          }).catch((err) => {
+            assert.deepEqual(err, expectedError);
+          });
+      });
+    });
+
   });
 
   describe('.disableCache', () => {

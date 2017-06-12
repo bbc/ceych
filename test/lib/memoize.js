@@ -4,7 +4,7 @@ const _ = require('lodash');
 const assert = require('chai').assert;
 const sinon = require('sinon');
 const sandbox = sinon.sandbox.create();
-
+const Promise = require('bluebird');
 const hash = require('../../lib/hash');
 const memoize = require('../../lib/memoize');
 const packageVersion = require('../../package.json').version;
@@ -19,13 +19,13 @@ function Circular() {
   this.circular = this;
 }
 
-describe('memoize', () => {
+describe.only('memoize', () => {
   let cacheClient;
 
   beforeEach(() => {
     cacheClient = {
-      set: sandbox.stub().yields(),
-      get: sandbox.stub().yields(),
+      setAsync: sandbox.stub().returns(Promise.resolve()),
+      getAsync: sandbox.stub().returns(Promise.resolve()),
       isReady: sandbox.stub().returns(true)
     };
     sandbox.stub(hash, 'create').returns('hashed');
@@ -94,11 +94,12 @@ describe('memoize', () => {
   describe('caching', () => {
     describe('retrieving from cache', () => {
       it('returns the result from the cache if one exists', (done) => {
-        cacheClient.get.withArgs(sinon.match({
-          id: 'hashed'
-        })).yields(null, {
-          item: [null, 1]
+        const cachedValue = Promise.resolve({
+          item: 1
         });
+        cacheClient.getAsync.withArgs(sinon.match({
+          id: 'hashed'
+        })).returns(cachedValue);
 
         const func = memoize(cacheClient, opts, wrappable);
 
@@ -110,13 +111,13 @@ describe('memoize', () => {
       });
 
       it('does not call the wrapped function if there is a result in the cache', (done) => {
-        cacheClient.get.withArgs(sinon.match({
+        cacheClient.getAsync.withArgs(sinon.match({
           id: 'hashed'
-        })).yields(null, {
-          item: [null, 1]
-        });
+        })).returns(Promise.resolve({
+          item: 1
+        }));
 
-        const wrappableStub = sandbox.stub().yields(null, 1);
+        const wrappableStub = sandbox.stub().returns(Promise.resolve(1));
         const func = memoize(cacheClient, opts, wrappableStub);
 
         func((err) => {
@@ -127,13 +128,13 @@ describe('memoize', () => {
       });
 
       it('returns a null value if it exists in the cache', (done) => {
-        cacheClient.get.withArgs(sinon.match({
+        cacheClient.getAsync.withArgs(sinon.match({
           id: 'hashed'
-        })).yields(null, {
-          item: [null, null]
-        });
+        })).returns(Promise.resolve({
+          item: null
+        }));
 
-        const wrappableStub = sandbox.stub().yields();
+        const wrappableStub = sandbox.stub().returns();
         const func = memoize(cacheClient, opts, wrappableStub);
 
         func((err, results) => {
@@ -147,19 +148,19 @@ describe('memoize', () => {
       it('does not attempt to retrieve from the cache if the cache is not ready', (done) => {
         cacheClient.isReady.returns(false);
 
-        const wrappableStub = sandbox.stub().yields();
+        const wrappableStub = sandbox.stub().returns();
         const func = memoize(cacheClient, opts, wrappableStub);
 
         func((err) => {
           assert.ifError(err);
-          sinon.assert.notCalled(cacheClient.get);
+          sinon.assert.notCalled(cacheClient.getAsync);
           done();
         });
       });
 
       it('returns an error to the callback if retrieving from the cache fails', (done) => {
         const func = memoize(cacheClient, opts, wrappable);
-        cacheClient.get.yields(new Error('GET Error!'));
+        cacheClient.getAsync.returns(Promise.reject(new Error('GET Error!')));
 
         func((err) => {
           assert.ok(err);
@@ -225,7 +226,7 @@ describe('memoize', () => {
 
     describe('saving to cache', () => {
       beforeEach(() => {
-        cacheClient.get.yields(null, null);
+        cacheClient.getAsync.returns(Promise.resolve(null, null));
       });
 
       it('sets the results of the function in the cache', (done) => {
@@ -234,7 +235,7 @@ describe('memoize', () => {
 
         func((err) => {
           assert.ifError(err);
-          sinon.assert.calledWith(cacheClient.set, sinon.match({
+          sinon.assert.calledWith(cacheClient.setAsync, sinon.match({
             id: 'hashed'
           }), [null, 1]);
           done();
@@ -247,7 +248,7 @@ describe('memoize', () => {
 
         func((err) => {
           assert.ifError(err);
-          sinon.assert.calledWith(cacheClient.set, sinon.match({
+          sinon.assert.calledWith(cacheClient.setAsync, sinon.match({
             id: 'hashed'
           }), [null, null]);
           done();
@@ -263,7 +264,7 @@ describe('memoize', () => {
 
         func((err) => {
           assert.ifError(err);
-          sinon.assert.calledWith(cacheClient.set, sinon.match({
+          sinon.assert.calledWith(cacheClient.setAsync, sinon.match({
             id: 'hashed'
           }), [null, 1], 10000);
           done();
@@ -276,7 +277,7 @@ describe('memoize', () => {
 
         func((err) => {
           assert.ifError(err);
-          sinon.assert.calledWith(cacheClient.set, sinon.match({
+          sinon.assert.calledWith(cacheClient.setAsync, sinon.match({
             segment: `ceych_${packageVersion}`
           }), [null, 1]);
           done();
@@ -291,13 +292,13 @@ describe('memoize', () => {
 
         func((err) => {
           assert.ifError(err);
-          sinon.assert.notCalled(cacheClient.set);
+          sinon.assert.notCalled(cacheClient.setAsync);
           done();
         });
       });
 
       it('returns an error to the callback if saving to the cache fails', (done) => {
-        cacheClient.set.yields(new Error('SET Error!'));
+        cacheClient.setAsync.returns(Promise.reject(new Error('SET Error!')));
         const func = memoize(cacheClient, opts, wrappable);
 
         func((err) => {
@@ -357,7 +358,7 @@ describe('memoize', () => {
     });
 
     it('increments a StatsD counter every time there is a cache hit', (done) => {
-      cacheClient.get.yields(null, [null, 1]);
+      cacheClient.getAsync.returns(Promise.resolve([null, 1]));
       const func = memoize(cacheClient, optsWithStats, wrappable);
 
       func((err) => {

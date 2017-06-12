@@ -1,13 +1,15 @@
 'use strict';
 
 const assert = require('chai').assert;
-const hash = require('../../lib/hash');
 const Catbox = require('catbox').Client;
 const sinon = require('sinon');
-const sandbox = sinon.sandbox.create();
 const Memory = require('catbox-memory');
+const Promise = require('bluebird');
 
+const hash = require('../../lib/hash');
 const Ceych = require('../../lib/ceych');
+
+const sandbox = sinon.sandbox.create();
 
 describe('ceych', () => {
   let ceych;
@@ -16,7 +18,7 @@ describe('ceych', () => {
 
   beforeEach(() => {
     sandbox.stub(hash, 'create').returns('hashed');
-    cacheClient = new Catbox(new Memory());
+    cacheClient = Promise.promisifyAll(new Catbox(new Memory()));
     wrappable = sandbox.stub().yields(null, 1);
 
     ceych = new Ceych({
@@ -80,25 +82,25 @@ describe('ceych', () => {
       });
 
       it('sets the TTL if the second argument is an integer', (done) => {
-        sandbox.stub(cacheClient, 'set').yields();
+        sandbox.stub(cacheClient, 'setAsync').returns(Promise.resolve());
         sandbox.stub(cacheClient, 'isReady').returns(true);
 
         const func = ceych.wrap(wrappable, 5);
 
         func((err) => {
           assert.ifError(err);
-          sinon.assert.calledWith(cacheClient.set, sinon.match.any, sinon.match.any, 5000);
+          sinon.assert.calledWith(cacheClient.setAsync, sinon.match.any, sinon.match.any, 5000);
           done();
         });
       });
 
       it('sets the suffix if the third argument is a string', (done) => {
-        sandbox.stub(cacheClient, 'set').yields();
+        sandbox.stub(cacheClient, 'setAsync').returns(Promise.resolve());
         const func = ceych.wrap(wrappable, 5, 'suffix');
 
         func((err) => {
           assert.ifError(err);
-          sinon.assert.calledWith(cacheClient.set, sinon.match({
+          sinon.assert.calledWith(cacheClient.setAsync, sinon.match({
             id: 'hashed'
           }));
           done();
@@ -106,12 +108,12 @@ describe('ceych', () => {
       });
 
       it('uses the defaultTTL if the suffix is passed in as the second argument', (done) => {
-        sandbox.stub(cacheClient, 'set').yields();
+        sandbox.stub(cacheClient, 'setAsync').returns(Promise.resolve());
         const func = ceych.wrap(wrappable, 'suffix');
 
         func((err) => {
           assert.ifError(err);
-          sinon.assert.calledWith(cacheClient.set, sinon.match({
+          sinon.assert.calledWith(cacheClient.setAsync, sinon.match({
             id: 'hashed'
           }), sinon.match.any, 30000);
           done();

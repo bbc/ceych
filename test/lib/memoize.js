@@ -63,6 +63,19 @@ describe('memoize', () => {
         });
     });
 
+    it('hashes a callback based function and arguments', (done) => {
+      const wrappableMultipleArgs = (one, two, three, four, cb) => {
+        return cb(null, 1);
+      };
+      const func = memoize(cacheClient, opts, wrappableMultipleArgs);
+
+      func(1, 2, 3, 4, (err) => {
+        assert.ifError(err);
+        sinon.assert.calledWith(hash.create, `${wrappableMultipleArgs.toString()}[1,2,3,4]`);
+        done();
+      });
+    });
+
     it('hashes the function as a string along with its arguments and a suffix', () => {
       const differentOpts = _.cloneDeep(opts);
       differentOpts.suffix = 'some differentiating suffix';
@@ -131,6 +144,23 @@ describe('memoize', () => {
           });
       });
 
+      it('returns the result from the cache for callback based functions', (done) => {
+        const cachedValue = Promise.resolve({
+          item: 1
+        });
+        cacheClient.getAsync.withArgs(sinon.match({
+          id: 'hashed'
+        })).returns(cachedValue);
+
+        const func = memoize(cacheClient, opts, wrappableWithCb);
+
+        func((err, results) => {
+          assert.ifError(err);
+          assert.strictEqual(results, 1);
+          done();
+        });
+      });
+
       it('returns a null value if it exists in the cache', () => {
         cacheClient.getAsync.withArgs(sinon.match({
           id: 'hashed'
@@ -162,7 +192,7 @@ describe('memoize', () => {
           });
       });
 
-      it('returns an error to the callback if retrieving from the cache fails', () => {
+      it('returns an error if retrieving from the cache fails', () => {
         const func = memoize(cacheClient, opts, wrappableWithCb);
         cacheClient.getAsync.returns(Promise.reject(new Error('GET Error!')));
 
@@ -173,6 +203,17 @@ describe('memoize', () => {
           .catch((err) => {
             assert.strictEqual(err.message, 'GET Error!');
           });
+      });
+
+      it('returns an error to the callback if retrieving from the cache fails', (done) => {
+        const func = memoize(cacheClient, opts, wrappableWithCb);
+        cacheClient.getAsync.returns(Promise.reject(new Error('GET Error!')));
+
+        func((err) => {
+          assert.ok(err);
+          assert.strictEqual(err.message, 'GET Error!');
+          done();
+        });
       });
     });
 
@@ -217,7 +258,7 @@ describe('memoize', () => {
           });
       });
 
-      it('returns an error to the callback if the wrapped function throws an error', () => {
+      it('returns an error if the wrapped function throws an error', () => {
         const wrappableStub = sandbox.stub().returns(Promise.reject(new Error('Function Error!')));
         const func = memoize(cacheClient, opts, wrappableStub);
 
@@ -245,6 +286,19 @@ describe('memoize', () => {
               id: 'hashed'
             }), [null, 1]);
           });
+      });
+
+      it('sets the results of callback based functions in the cache', (done) => {
+        const wrappableStub = sandbox.stub().yields(null, 1);
+        const func = memoize(cacheClient, opts, wrappableStub);
+
+        func((err) => {
+          assert.ifError(err);
+          sinon.assert.calledWith(cacheClient.setAsync, sinon.match({
+            id: 'hashed'
+          }), [null, 1]);
+          done();
+        });
       });
 
       it('sets a return value of null to the cache', () => {
@@ -301,7 +355,7 @@ describe('memoize', () => {
           });
       });
 
-      it('returns an error to the callback if saving to the cache fails', () => {
+      it('returns an error if saving to the cache fails', () => {
         cacheClient.setAsync.returns(Promise.reject(new Error('SET Error!')));
         const func = memoize(cacheClient, opts, wrappable);
 

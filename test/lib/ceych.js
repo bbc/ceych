@@ -13,13 +13,12 @@ const sandbox = sinon.sandbox.create();
 
 describe('ceych', () => {
   let ceych;
-  let wrappable;
-  let cacheClient;
+  const wrappable = sandbox.stub().returns(Promise.resolve(1));
+  const cacheClient = Promise.promisifyAll(new Catbox(new Memory()));
+  const wrappableWithCb = sandbox.stub().yields(null, 1);
 
   beforeEach(() => {
     sandbox.stub(hash, 'create').returns('hashed');
-    cacheClient = Promise.promisifyAll(new Catbox(new Memory()));
-    wrappable = sandbox.stub().yields(null, 1);
 
     ceych = new Ceych({
       cacheClient: cacheClient
@@ -81,41 +80,55 @@ describe('ceych', () => {
         }, Error, 'Can only wrap a function, received [1]');
       });
 
-      it('sets the TTL if the second argument is an integer', (done) => {
+      it('sets the TTL if the second argument is an integer', () => {
         sandbox.stub(cacheClient, 'setAsync').returns(Promise.resolve());
         sandbox.stub(cacheClient, 'isReady').returns(true);
 
         const func = ceych.wrap(wrappable, 5);
 
-        func((err) => {
-          assert.ifError(err);
-          sinon.assert.calledWith(cacheClient.setAsync, sinon.match.any, sinon.match.any, 5000);
-          done();
-        });
+        return func()
+          .catch(assert.ifError)
+          .then(() => {
+            sinon.assert.calledWith(cacheClient.setAsync, sinon.match.any, sinon.match.any, 5000);
+          });
       });
 
-      it('sets the suffix if the third argument is a string', (done) => {
+      it('sets the suffix if the third argument is a string', () => {
         sandbox.stub(cacheClient, 'setAsync').returns(Promise.resolve());
         const func = ceych.wrap(wrappable, 5, 'suffix');
 
-        func((err) => {
-          assert.ifError(err);
-          sinon.assert.calledWith(cacheClient.setAsync, sinon.match({
-            id: 'hashed'
-          }));
-          done();
-        });
+        return func()
+          .catch(assert.ifError)
+          .then(() => {
+            sinon.assert.calledWith(cacheClient.setAsync, sinon.match({
+              id: 'hashed'
+            }));
+          });
       });
 
-      it('uses the defaultTTL if the suffix is passed in as the second argument', (done) => {
+      it('uses the defaultTTL if the suffix is passed in as the second argument', () => {
         sandbox.stub(cacheClient, 'setAsync').returns(Promise.resolve());
         const func = ceych.wrap(wrappable, 'suffix');
 
-        func((err) => {
+        func()
+          .catch(assert.ifError)
+          .then(() => {
+            sinon.assert.calledWith(cacheClient.setAsync, sinon.match({
+              id: 'hashed'
+            }), sinon.match.any, 30000);
+          });
+      });
+
+      it('supports callbacks', (done) => {
+        const cachedValue = Promise.resolve({
+          item: 1
+        });
+        sandbox.stub(cacheClient, 'getAsync').returns(cachedValue);
+        const func = ceych.wrap(wrappableWithCb);
+
+        func((err, result) => {
           assert.ifError(err);
-          sinon.assert.calledWith(cacheClient.setAsync, sinon.match({
-            id: 'hashed'
-          }), sinon.match.any, 30000);
+          assert.equal(result, 1);
           done();
         });
       });
@@ -130,7 +143,7 @@ describe('ceych', () => {
           statsClient: statsClient
         });
 
-        const func = ceychWithStats.wrap(wrappable);
+        const func = ceychWithStats.wrap(wrappableWithCb);
 
         func((err) => {
           assert.ifError(err);

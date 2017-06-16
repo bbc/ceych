@@ -284,7 +284,7 @@ describe('memoize', () => {
           .then(() => {
             sinon.assert.calledWith(cacheClient.setAsync, sinon.match({
               id: 'hashed'
-            }), [null, 1]);
+            }), 1);
           });
       });
 
@@ -296,7 +296,7 @@ describe('memoize', () => {
           assert.ifError(err);
           sinon.assert.calledWith(cacheClient.setAsync, sinon.match({
             id: 'hashed'
-          }), [null, 1]);
+          }), [1]);
           done();
         });
       });
@@ -309,7 +309,7 @@ describe('memoize', () => {
           .then(() => {
             sinon.assert.calledWith(cacheClient.setAsync, sinon.match({
               id: 'hashed'
-            }), [null, null]);
+            }), null);
           });
       });
 
@@ -325,7 +325,7 @@ describe('memoize', () => {
           .then(() => {
             sinon.assert.calledWith(cacheClient.setAsync, sinon.match({
               id: 'hashed'
-            }), [null, 1], 10000);
+            }), 1, 10000);
           });
       });
 
@@ -338,7 +338,7 @@ describe('memoize', () => {
           .then(() => {
             sinon.assert.calledWith(cacheClient.setAsync, sinon.match({
               segment: `ceych_${packageVersion}`
-            }), [null, 1]);
+            }), 1);
           });
       });
 

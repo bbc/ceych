@@ -27,6 +27,15 @@
     "type": "git",
     "url": "git+ssh://git@github.com/bbc/ceych.git"
   },
+  "keywords": [
+    "cache",
+    "caching",
+    "asynchronous",
+    "function",
+    "ceych",
+    "wrapper",
+    "promise"
+  ],
   "devDependencies": {
     "chai": "^3.4.1",
     "eslint": "^1.10.3",

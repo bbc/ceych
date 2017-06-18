@@ -4,7 +4,7 @@ const assert = require('chai').assert;
 const Catbox = require('catbox').Client;
 const sinon = require('sinon');
 const Memory = require('catbox-memory');
-const Promise = require('bluebird');
+const promisifyAll = require('../../lib/promiseUtils').promisifyAll;
 
 const hash = require('../../lib/hash');
 const Ceych = require('../../lib/ceych');
@@ -14,7 +14,7 @@ const sandbox = sinon.sandbox.create();
 describe('ceych', () => {
   let ceych;
   const wrappable = sandbox.stub().returns(Promise.resolve(1));
-  const cacheClient = Promise.promisifyAll(new Catbox(new Memory()));
+  const cacheClient = promisifyAll(new Catbox(new Memory()));
   const wrappableWithCb = sandbox.stub().yields(null, 1);
 
   beforeEach(() => {

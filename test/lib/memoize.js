@@ -4,7 +4,6 @@ const _ = require('lodash');
 const assert = require('chai').assert;
 const sinon = require('sinon');
 const sandbox = sinon.sandbox.create();
-const Promise = require('bluebird');
 const hash = require('../../lib/hash');
 const memoize = require('../../lib/memoize');
 const packageVersion = require('../../package.json').version;

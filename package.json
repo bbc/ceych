@@ -34,7 +34,8 @@
     "function",
     "ceych",
     "wrapper",
-    "promise"
+    "promise",
+    "memoize"
   ],
   "devDependencies": {
     "chai": "^3.4.1",

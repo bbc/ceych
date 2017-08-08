@@ -98,8 +98,8 @@ describe('memoize', () => {
       const func = memoize(cacheClient, opts, wrappableWithObject);
 
       return func({
-          testing: '123'
-        })
+        testing: '123'
+      })
         .catch(assert.ifError)
         .then(() => {
           sinon.assert.calledWith(hash.create, `${wrappableWithObject.toString()}[{"testing":"123"}]`);
@@ -234,8 +234,8 @@ describe('memoize', () => {
         const func = memoize(cacheClient, opts, wrappableStub);
 
         return func(1, {
-            two: 'three'
-          }, [4], 'five')
+          two: 'three'
+        }, [4], 'five')
           .catch(assert.ifError)
           .then(() => {
             sinon.assert.calledWith(wrappableStub, 1, sinon.match({
@@ -407,6 +407,28 @@ describe('memoize', () => {
       func((err) => {
         assert.ifError(err);
         sinon.assert.calledWith(statsClient.increment, 'ceych.hits');
+        done();
+      });
+    });
+
+    it('increments a StatsD counter when fetching from the cache returns an error', (done) => {
+      cacheClient.getAsync.returns(Promise.reject(new Error('error')));
+      const func = memoize(cacheClient, optsWithStats, wrappableWithCb);
+
+      func((err) => {
+        assert.ok(err);
+        sinon.assert.calledWith(statsClient.increment, 'ceych.errors');
+        done();
+      });
+    });
+
+    it('increments a StatsD counter when saving to the cache returns an error', (done) => {
+      cacheClient.setAsync.returns(Promise.reject(new Error('error')));
+      const func = memoize(cacheClient, optsWithStats, wrappableWithCb);
+
+      func((err) => {
+        assert.ok(err);
+        sinon.assert.calledWith(statsClient.increment, 'ceych.errors');
         done();
       });
     });

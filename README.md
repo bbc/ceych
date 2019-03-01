@@ -81,3 +81,8 @@ Returns a wrapped function that implements caching.
 #### `ceych.disableCache()`
 
 Disables the cache client to allow for wrapped methods to be tested as normal.
+
+#### `ceych.invalidate(fn, args)`
+
+Invalidates the current cache entry for the given function and args combination.
+Note: This takes the original function, _not_ the wrapped function.

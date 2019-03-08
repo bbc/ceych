@@ -165,15 +165,13 @@ describe('ceych', () => {
         assert.equal(result, 1);
         sinon.assert.calledOnce(wrappable);
 
-        // Invalidate the cache entry
         ceych.invalidate(wrappable, (err) => {
           assert.ifError(err);
 
-          // Call function again
           func((err, result) => {
             assert.ifError(err);
             assert.equal(result, 1);
-            // Assert that it's been called again
+
             sinon.assert.calledTwice(wrappable);
             done();
           });
@@ -189,16 +187,13 @@ describe('ceych', () => {
         assert.equal(result, 1);
         sinon.assert.calledOnce(wrappable);
 
-        // Invalidate the cache entry
         ceych.invalidate(wrappable, (err) => {
           assert.ifError(err);
 
-          // Call function again
           func((err, result) => {
             assert.ifError(err);
             assert.equal(result, 1);
 
-            // Assert that it's been called again
             sinon.assert.calledTwice(wrappable);
             done();
           });
@@ -209,7 +204,7 @@ describe('ceych', () => {
     it('does not affect other cache keys of the same function', (done) => {
       const func = ceych.wrap(wrappable);
 
-      // Call function with another set of args
+      // Call function with one set of args
       func(1, 2, 3, (err, result) => {
         assert.ifError(err);
         assert.equal(result, 1);
@@ -227,6 +222,7 @@ describe('ceych', () => {
           // Invalidate the cache entry with the first arguments only
           ceych.invalidate(wrappable, 1, 2, 3, (err) => {
             assert.ifError(err);
+
             // Call function with the second set of args and do not expect another actual call
             func('anotherarg', (err, result) => {
               assert.ifError(err);

@@ -245,5 +245,27 @@ describe('ceych', () => {
       });
     });
 
+    it('handles lack of callback', (done) => {
+      const func = ceych.wrap(wrappable);
+
+      func((err, result) => {
+        assert.ifError(err);
+        assert.equal(result, 1);
+        sinon.assert.calledOnce(wrappable);
+
+        ceych.invalidate(wrappable);
+        setTimeout(() => {
+          assert.ifError(err);
+
+          func((err, result) => {
+            assert.ifError(err);
+            assert.equal(result, 1);
+
+            sinon.assert.calledTwice(wrappable);
+            done();
+          });
+        }, 200);
+      });
+    });
   });
 });

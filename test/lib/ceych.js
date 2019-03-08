@@ -16,6 +16,7 @@ describe('ceych', () => {
 
   beforeEach(() => {
     sandbox.stub(hash, 'create').returns('hashed');
+    hash.create.withArgs('stub["anotherarg"]').returns('hashed2');
     cacheClient = new Catbox(new Memory());
     wrappable = sandbox.stub().yields(null, 1);
 
@@ -153,5 +154,100 @@ describe('ceych', () => {
       ceych.disableCache();
       sinon.assert.called(cacheClient.stop);
     });
+  });
+
+  describe('.invalidate', () => {
+    it('invalidates the cache entry', (done) => {
+      const func = ceych.wrap(wrappable);
+
+      func((err, result) => {
+        assert.ifError(err);
+        assert.equal(result, 1);
+        sinon.assert.calledOnce(wrappable);
+
+        // Invalidate the cache entry
+        ceych.invalidate(wrappable, (err) => {
+          assert.ifError(err);
+
+          // Call function again
+          func((err, result) => {
+            assert.ifError(err);
+            assert.equal(result, 1);
+            // Assert that it's been called again
+            sinon.assert.calledTwice(wrappable);
+            done();
+          });
+        });
+      });
+    });
+
+    it('supports a custom ttl and suffix', (done) => {
+      const func = ceych.wrap(wrappable, 20, 'saywat');
+
+      func((err, result) => {
+        assert.ifError(err);
+        assert.equal(result, 1);
+        sinon.assert.calledOnce(wrappable);
+
+        // Invalidate the cache entry
+        ceych.invalidate(wrappable, (err) => {
+          assert.ifError(err);
+
+          // Call function again
+          func((err, result) => {
+            assert.ifError(err);
+            assert.equal(result, 1);
+
+            // Assert that it's been called again
+            sinon.assert.calledTwice(wrappable);
+            done();
+          });
+        });
+      });
+    });
+
+    it('does not affect other cache keys of the same function', (done) => {
+      const func = ceych.wrap(wrappable);
+
+      // Call function with another set of args
+      func(1, 2, 3, (err, result) => {
+        assert.ifError(err);
+        assert.equal(result, 1);
+        sinon.assert.calledOnce(wrappable);
+
+        // Call function with another set of args
+        func('anotherarg', (err, result) => {
+          assert.ifError(err);
+          assert.equal(result, 1);
+
+          // Assert that this resulted in a second actual call
+          sinon.assert.calledTwice(wrappable);
+          sinon.assert.calledWith(wrappable.secondCall, 'anotherarg');
+          
+          // Invalidate the cache entry with the first arguments only
+          ceych.invalidate(wrappable, 1, 2, 3, (err) => {
+            assert.ifError(err);
+            // Call function with the second set of args and do not expect another actual call
+            func('anotherarg', (err, result) => {
+              assert.ifError(err);
+              assert.equal(result, 1);
+
+              sinon.assert.calledTwice(wrappable);
+              sinon.assert.calledWith(wrappable.secondCall, 'anotherarg');
+
+              // Call function with the first set of args and expect another actual call
+              func(1, 2, 3, (err, result) => {
+                assert.ifError(err);
+                assert.equal(result, 1);
+                sinon.assert.calledThrice(wrappable);
+                sinon.assert.calledWith(wrappable.thirdCall, 1, 2, 3);
+                done();
+              });
+            });
+          });
+        });
+      });
+    });
+
   });
 });

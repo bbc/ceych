@@ -82,7 +82,7 @@ Returns a wrapped function that implements caching.
 
 Disables the cache client to allow for wrapped methods to be tested as normal.
 
-#### `ceych.invalidate(fn, args)`
+#### `ceych.invalidate(fn, args, cb)`
 
  Invalidates the current cache entry for the given function and args combination.
 Note: This takes the original function, _not_ the wrapped function.

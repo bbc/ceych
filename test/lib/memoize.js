@@ -190,6 +190,21 @@ describe('memoize', () => {
             sinon.assert.notCalled(cacheClient.getAsync);
           });
       });
+      
+      it('calls the underlying fn if the cache is not ready', () => {
+        cacheClient.isReady.returns(false);
+
+        const expected = 'yoyoyoyoyoyoyoyo';
+        const wrappableStub = sandbox.stub().returns(expected);
+        const func = memoize(cacheClient, opts, wrappableStub);
+
+        return func()
+          .catch(assert.ifError)
+          .then((res) => {
+            sinon.assert.called(wrappableStub);
+            assert.strictEqual(res, expected);
+          });
+      });
 
       it('returns an error if retrieving from the cache fails', () => {
         const func = memoize(cacheClient, opts, wrappableWithCb);
@@ -349,8 +364,9 @@ describe('memoize', () => {
 
         return func()
           .catch(assert.ifError)
-          .then(() => {
+          .then((res) => {
             sinon.assert.notCalled(cacheClient.setAsync);
+            assert.strictEqual(res, 1);
           });
       });
 

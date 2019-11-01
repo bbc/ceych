@@ -39,7 +39,7 @@
   ],
   "devDependencies": {
     "chai": "^3.4.1",
-    "eslint": "^1.10.3",
+    "eslint": "^6.6.0",
     "istanbul": "^0.4.1",
     "mocha": "^3.1.0",
     "sinon": "^1.17.2"

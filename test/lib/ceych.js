@@ -9,7 +9,7 @@ const promisifyAll = require('../../lib/promiseUtils').promisifyAll;
 const hash = require('../../lib/hash');
 const Ceych = require('../../lib/ceych');
 
-const sandbox = sinon.sandbox.create();
+const sandbox = sinon.createSandbox();
 
 describe('ceych', () => {
   let ceych;

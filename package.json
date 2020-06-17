@@ -4,7 +4,7 @@
   "description": "Wraps any asynchronous function and provides caching of the result",
   "main": "index.js",
   "scripts": {
-    "test": "mocha",
+    "test": "mocha --recursive",
     "posttest": "npm run lint",
     "lint": "eslint .",
     "coverage": "istanbul cover _mocha -- -R dot"
@@ -38,10 +38,10 @@
     "memoize"
   ],
   "devDependencies": {
-    "chai": "^3.4.1",
-    "eslint": "^1.10.3",
+    "chai": "^4.2.0",
+    "eslint": "^7.2.0",
     "istanbul": "^0.4.1",
-    "mocha": "^3.1.0",
-    "sinon": "^1.17.2"
+    "mocha": "^8.0.1",
+    "sinon": "^9.0.2"
   }
 }

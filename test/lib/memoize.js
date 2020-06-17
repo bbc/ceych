@@ -39,14 +39,11 @@ describe('memoize', () => {
   });
 
   describe('hashing', () => {
-    it('hashes the function as a string when there are no arguments', () => {
+    it('hashes the function as a string when there are no arguments', async () => {
       const func = memoize(cacheClient, opts, wrappable);
 
-      func()
-        .catch(assert.ifError)
-        .then(() => {
-          sinon.assert.calledWith(hash.create, `${wrappable.toString()}[]`);
-        });
+      await func();
+      sinon.assert.calledWith(hash.create, `${wrappable.toString()}[]`);
     });
 
     it('hashes the function as a string along with its arguments', () => {
@@ -109,7 +106,7 @@ describe('memoize', () => {
 
   describe('caching', () => {
     describe('retrieving from cache', () => {
-      it('returns the result from the cache if one exists', () => {
+      it('returns the result from the cache if one exists', async () => {
         const cachedValue = Promise.resolve({
           item: 1
         });
@@ -119,11 +116,8 @@ describe('memoize', () => {
 
         const func = memoize(cacheClient, opts, wrappable);
 
-        func()
-          .catch(assert.ifError)
-          .then((results) => {
-            assert.strictEqual(results, 1);
-          });
+        const results = await func();
+        assert.strictEqual(results, 1);
       });
 
       it('does not call the wrapped function if there is a result in the cache', () => {
@@ -190,7 +184,7 @@ describe('memoize', () => {
             sinon.assert.notCalled(cacheClient.getAsync);
           });
       });
-      
+
       it('calls the underlying fn if the cache is not ready', () => {
         cacheClient.isReady.returns(false);
 

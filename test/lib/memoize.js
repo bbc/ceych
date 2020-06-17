@@ -22,7 +22,7 @@ function Circular() {
   this.circular = this;
 }
 
-describe('memoize', () => {
+describe.only('memoize', () => {
   let cacheClient;
 
   beforeEach(() => {

@@ -32,13 +32,8 @@ function loadData(cb) {
 
 const loadDataCached = ceych.wrap(loadData);
 
-loadDataCached((err, res) => {
-  // `res` is returned from the server and stored in the cache
-
-  loadDataCached((err, res) => {
-    // `res` is returned from the cache until TTL expiry
-  });
-});
+const miss = loadDataCached(); // returned from the server and stored in the cache
+const hit = loadDataCached(); // returned from the server and stored in the cache
 ```
 
 ## How does it work?
@@ -74,7 +69,7 @@ Returns a wrapped function that implements caching.
 
 ##### Parameters
 
-* `fn` - An asynchronous function to be wrapped. The last argument must be a callback.
+* `fn` - An asynchronous function to be wrapped.
 * `ttl` - _optional_ - Overrides the default TTL.
 * `suffix` - _optional_ - A string appended to cache keys to differentiate between identical functions.
 

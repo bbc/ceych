@@ -14,7 +14,6 @@ describe('ceych', () => {
   let ceych;
   const wrappable = sandbox.stub().returns(Promise.resolve(1));
   const cacheClient = new Catbox(new Memory());
-  const wrappableWithCb = sandbox.stub().yields(null, 1);
 
   beforeEach(() => {
     sandbox.stub(hash, 'create').returns('hashed');
@@ -116,20 +115,6 @@ describe('ceych', () => {
               id: 'hashed'
             }), sinon.match.any, 30000);
           });
-      });
-
-      it.skip('supports callbacks', (done) => {
-        const cachedValue = Promise.resolve({
-          item: 1
-        });
-        sandbox.stub(cacheClient, 'get').returns(cachedValue);
-        const func = ceych.wrap(wrappableWithCb);
-
-        func((err, result) => {
-          assert.ifError(err);
-          assert.equal(result, 1);
-          done();
-        });
       });
 
       it('returns a function that supports sending metrics to StatsD', async () => {

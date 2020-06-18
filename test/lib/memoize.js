@@ -56,19 +56,6 @@ describe('memoize', () => {
       sinon.assert.calledWith(hash.create, `${wrappableMultipleArgs.toString()}[1,2,3,4]`);
     });
 
-    // it('hashes a callback based function and arguments', (done) => {
-    //   const wrappableMultipleArgs = (one, two, three, four, cb) => {
-    //     return cb(null, 1);
-    //   };
-    //   const func = memoize(cacheClient, opts, wrappableMultipleArgs);
-
-    //   func(1, 2, 3, 4, (err) => {
-    //     assert.ifError(err);
-    //     sinon.assert.calledWith(hash.create, `${wrappableMultipleArgs.toString()}[1,2,3,4]`);
-    //     done();
-    //   });
-    // });
-
     it('hashes the function as a string along with its arguments and a suffix', async () => {
       const differentOpts = _.cloneDeep(opts);
       differentOpts.suffix = 'some differentiating suffix';
@@ -259,19 +246,6 @@ describe('memoize', () => {
           id: 'hashed'
         }), 1);
       });
-
-      // it('sets the results of callback based functions in the cache', (done) => {
-      //   const wrappableStub = sandbox.stub().yields(null, 1);
-      //   const func = memoize(cacheClient, opts, wrappableStub);
-
-      //   func((err) => {
-      //     assert.ifError(err);
-      //     sinon.assert.calledWith(cacheClient.set, sinon.match({
-      //       id: 'hashed'
-      //     }), [1]);
-      //     done();
-      //   });
-      // });
 
       it('sets a return value of null to the cache', async () => {
         const wrappableStub = sandbox.stub().returns(Promise.resolve(null));

@@ -109,7 +109,7 @@ describe('ceych', () => {
         sandbox.stub(cacheClient, 'set').returns(Promise.resolve());
         const func = ceych.wrap(wrappable, 'suffix');
 
-        func()
+        return func()
           .catch(assert.ifError)
           .then(() => {
             sinon.assert.calledWith(cacheClient.set, sinon.match({

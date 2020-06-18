@@ -4,12 +4,11 @@
   "description": "Wraps any asynchronous function and provides caching of the result",
   "main": "index.js",
   "scripts": {
-    "test": "mocha --recursive",
+    "test": "mocha --recursive --exit",
     "posttest": "npm run lint",
     "lint": "eslint .",
     "coverage": "istanbul cover _mocha -- -R dot"
   },
-  "author": "Cem.Staveley@bbc.co.uk",
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/bbc/ceych/issues"
@@ -18,9 +17,8 @@
     "node": ">=4.0.0"
   },
   "dependencies": {
-    "bluebird": "^3.5.0",
-    "catbox": "^7.1.0",
-    "catbox-memory": "^2.0.1",
+    "catbox": "^10.0.6",
+    "catbox-memory": "^4.0.1",
     "lodash": "^4.3.0"
   },
   "repository": {

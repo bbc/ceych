@@ -14,12 +14,12 @@
     "url": "https://github.com/bbc/ceych/issues"
   },
   "engines": {
-    "node": ">=12.0.0"
+    "node": ">=14.0.0"
   },
   "dependencies": {
-    "catbox": "^10.0.6",
-    "catbox-memory": "^4.0.1",
-    "lodash": "^4.3.0"
+    "@hapi/catbox": "^12.1.1",
+    "@hapi/catbox-memory": "^6.0.1",
+    "lodash": "^4.17.21"
   },
   "repository": {
     "type": "git",
@@ -36,10 +36,10 @@
     "memoize"
   ],
   "devDependencies": {
-    "chai": "^4.2.0",
-    "eslint": "^7.2.0",
-    "istanbul": "^0.4.1",
-    "mocha": "^8.0.1",
-    "sinon": "^9.0.2"
+    "chai": "^4.3.7",
+    "eslint": "^8.38.0",
+    "istanbul": "^0.4.5",
+    "mocha": "^10.2.0",
+    "sinon": "^15.0.3"
   }
 }

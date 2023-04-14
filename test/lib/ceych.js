@@ -1,9 +1,9 @@
 'use strict';
 
 const assert = require('chai').assert;
-const Catbox = require('catbox').Client;
+const Catbox = require('@hapi/catbox').Client;
 const sinon = require('sinon');
-const Memory = require('catbox-memory');
+const CatboxMemory = require('@hapi/catbox-memory');
 
 const hash = require('../../lib/hash');
 const Ceych = require('../../lib/ceych');
@@ -13,7 +13,7 @@ const sandbox = sinon.createSandbox();
 describe('ceych', () => {
   let ceych;
   const wrappable = sandbox.stub().returns(Promise.resolve(1));
-  const cacheClient = new Catbox(new Memory());
+  const cacheClient = new Catbox(new CatboxMemory.Engine());
 
   beforeEach(() => {
     sandbox.stub(hash, 'create').returns('hashed');
@@ -39,7 +39,7 @@ describe('ceych', () => {
     it('defaults to a Catbox Memory cache client', () => {
       const ceych = new Ceych();
       assert.strictEqual(ceych.cache instanceof Catbox, true);
-      assert.strictEqual(ceych.cache.connection instanceof Memory, true);
+      assert.strictEqual(ceych.cache.connection instanceof CatboxMemory.Engine, true);
     });
 
     it('defaults to a TTL of 30 seconds', () => {

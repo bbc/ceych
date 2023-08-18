@@ -14,8 +14,8 @@ npm install --save ceych
 'use strict';
 
 const request = require('request');
-const Catbox = require('catbox').Client;
-const Redis = require('catbox-redis');
+const Catbox = require('@hapi/catbox').Client;
+const Redis = require('@hapi/catbox-redis');
 
 const ceych = require('ceych').createClient({
   cacheClient: new Catbox(new Redis({

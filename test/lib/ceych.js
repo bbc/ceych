@@ -28,7 +28,7 @@ describe('ceych', () => {
   });
 
   it('does not error if cache client fails', () => {
-    sandbox.stub(cacheClient, 'start').yields(new Error('DB connection failure'));
+    sandbox.stub(cacheClient, 'start').rejects(new Error('DB connection failure'));
 
     new Ceych({
       cacheClient: cacheClient
@@ -138,18 +138,51 @@ describe('ceych', () => {
   });
 
   describe('.disableCache', () => {
-    it('stops the current cache client', () => {
+    it('stops the cache client', async () => {
       const cacheClient = {
-        start: sandbox.stub().yields(),
-        stop: sandbox.stub().returns()
+        start: sandbox.stub().resolves(),
+        stop: sandbox.stub().resolves()
       };
 
       const ceych = new Ceych({
         cacheClient: cacheClient
       });
 
-      ceych.disableCache();
+      await ceych.disableCache();
       sinon.assert.called(cacheClient.stop);
+    });
+  });
+
+  describe('.enableCache', () => {
+    it('starts the cache client if it is stopped', async () => {
+      const cacheClient = {
+        start: sandbox.stub().resolves(),
+        stop: sandbox.stub().resolves(),
+        isReady: sandbox.stub().returns(false)
+      };
+
+      const ceych = new Ceych({
+        cacheClient: cacheClient
+      });
+
+      await ceych.enableCache();
+      sinon.assert.called(cacheClient.start);
+    });
+
+    it('does nothing if the cache client was already started', async () => {
+      const cacheClient = {
+        start: sandbox.stub().resolves(),
+        stop: sandbox.stub().resolves(),
+        isReady: sandbox.stub().returns(true)
+      };
+
+      const ceych = new Ceych({
+        cacheClient: cacheClient
+      });
+      cacheClient.start.resetHistory(); // start is called in the constructor, so reset its history
+
+      await ceych.enableCache();
+      sinon.assert.notCalled(cacheClient.start);
     });
   });
 });

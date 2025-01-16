@@ -75,4 +75,8 @@ Returns a wrapped function that implements caching.
 
 #### `ceych.disableCache()`
 
-Disables the cache client to allow for wrapped methods to be tested as normal.
+Disables the use of the cache. This can be useful if you want to toggle usage of the cache for operational purposes - e.g. for operational purposes, or unit tests.
+
+#### `ceych.enableCache()`
+
+Re-enables the cache client. This can be useful if you want to toggle usage of the cache for operational purposes - e.g. for operational purposes, or unit tests.

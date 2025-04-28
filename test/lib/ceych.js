@@ -119,7 +119,8 @@ describe('ceych', () => {
 
       it('returns a function that supports sending metrics to StatsD', async () => {
         const statsClient = {
-          increment: sandbox.stub()
+          increment: sandbox.stub(),
+          timing: sandbox.stub(),
         };
 
         const ceychWithStats = new Ceych({

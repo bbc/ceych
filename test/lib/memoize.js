@@ -324,7 +324,8 @@ describe('memoize', () => {
 
     beforeEach(() => {
       statsClient = {
-        increment: sandbox.stub()
+        increment: sandbox.stub(),
+        timing: sandbox.stub(),
       };
 
       optsWithStats = _.cloneDeep(opts);
@@ -339,7 +340,7 @@ describe('memoize', () => {
     });
 
     it('increments a StatsD counter every time there is a cache hit', async () => {
-      cacheClient.get.returns(Promise.resolve([null, 1]));
+      cacheClient.get.returns(Promise.resolve({ item: 1 }));
       const func = memoize(cacheClient, optsWithStats, wrappable);
 
       await func();
@@ -371,6 +372,21 @@ describe('memoize', () => {
         return sinon.assert.calledWith(statsClient.increment, 'ceych.errors');
       }
       assert.fail('Expected error to be returned!');
+    });
+
+    it('records the write time in a StatsD timing stat', async () => {
+      const func = memoize(cacheClient, optsWithStats, wrappable);
+      
+      await func();
+      sinon.assert.calledWith(statsClient.timing, 'ceych.write_time');
+    });
+
+    it('records the read time in a StatsD timing stat', async () => {
+      cacheClient.get.returns(Promise.resolve({ item: 1 }));
+      const func = memoize(cacheClient, optsWithStats, wrappable);
+
+      await func();
+      sinon.assert.calledWith(statsClient.timing, 'ceych.read_time');
     });
   });
 });

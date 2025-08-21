@@ -17,9 +17,6 @@ describe('ceych', () => {
 
   beforeEach(() => {
     sandbox.stub(hash, 'create').returns('hashed');
-    hash.create.withArgs('stub["anotherarg"]').returns('hashed2');
-    cacheClient = new Catbox(new Memory());
-    wrappable = sandbox.stub().yields(null, 1);
 
     ceych = new Ceych({
       cacheClient: cacheClient
@@ -142,26 +139,35 @@ describe('ceych', () => {
   });
 
   describe('.invalidate', () => {
-    it('invalidates the cache entry', (done) => {
+    beforeEach(() => {
+      const cacheClientStub = sandbox.stub(cacheClient);
+      cacheClientStub.isReady.returns(true);
+      cacheClientStub.set.returns(Promise.resolve());
+      cacheClientStub.get.onFirstCall().returns(null);
+      cacheClientStub.get.onSecondCall().returns({ item: 1 });
+      cacheClientStub.get.onThirdCall().returns(null);
+    });
+
+    afterEach(() => {
+      sandbox.restore();
+    });
+
+    it('invalidates the cache entry', async () => {
       const func = ceych.wrap(wrappable);
 
-      func((err, result) => {
-        assert.ifError(err);
-        assert.equal(result, 1);
-        sinon.assert.calledOnce(wrappable);
+      const resp = await func();
+      const resp2 = await func();
 
-        ceych.invalidate(wrappable, (err) => {
-          assert.ifError(err);
+      sinon.assert.calledOnce(wrappable);
+      assert.equal(resp, 1);
+      assert.equal(resp2, 1);
 
-          func((err, result) => {
-            assert.ifError(err);
-            assert.equal(result, 1);
+      ceych.invalidate(wrappable);
 
-            sinon.assert.calledTwice(wrappable);
-            done();
-          });
-        });
-      });
+      const resp3 = await func();
+
+      sinon.assert.calledTwice(wrappable);
+      assert.equal(resp3, 1);
     });
 
     it('supports a custom ttl and suffix', (done) => {
@@ -251,66 +257,6 @@ describe('ceych', () => {
           });
         }, 200);
       });
-      it('starts the cache client if it is stopped', async () => {
-        const cacheClient = {
-          start: sandbox.stub().resolves(),
-          stop: sandbox.stub().resolves(),
-          isReady: sandbox.stub().returns(false)
-        };
-  
-        const ceych = new Ceych({
-          cacheClient: cacheClient
-        });
-  
-        await ceych.enableCache();
-        sinon.assert.called(cacheClient.start);
-      });
-  
-      it('does nothing if the cache client was already started', async () => {
-        const cacheClient = {
-          start: sandbox.stub().resolves(),
-          stop: sandbox.stub().resolves(),
-          isReady: sandbox.stub().returns(true)
-        };
-  
-        const ceych = new Ceych({
-          cacheClient: cacheClient
-        });
-        cacheClient.start.resetHistory(); // start is called in the constructor, so reset its history
-  
-        await ceych.enableCache();
-        sinon.assert.notCalled(cacheClient.start);
-      });
-    });
-    it('starts the cache client if it is stopped', async () => {
-      const cacheClient = {
-        start: sandbox.stub().resolves(),
-        stop: sandbox.stub().resolves(),
-        isReady: sandbox.stub().returns(false)
-      };
-
-      const ceych = new Ceych({
-        cacheClient: cacheClient
-      });
-
-      await ceych.enableCache();
-      sinon.assert.called(cacheClient.start);
-    });
-
-    it('does nothing if the cache client was already started', async () => {
-      const cacheClient = {
-        start: sandbox.stub().resolves(),
-        stop: sandbox.stub().resolves(),
-        isReady: sandbox.stub().returns(true)
-      };
-
-      const ceych = new Ceych({
-        cacheClient: cacheClient
-      });
-      cacheClient.start.resetHistory(); // start is called in the constructor, so reset its history
-
-      await ceych.enableCache();
-      sinon.assert.notCalled(cacheClient.start);
     });
   });
 

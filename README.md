@@ -14,8 +14,8 @@ npm install --save ceych
 'use strict';
 
 const request = require('request');
-const Catbox = require('catbox').Client;
-const Redis = require('catbox-redis');
+const Catbox = require('@hapi/catbox').Client;
+const Redis = require('@hapi/catbox-redis');
 
 const ceych = require('ceych').createClient({
   cacheClient: new Catbox(new Redis({
@@ -32,13 +32,8 @@ function loadData(cb) {
 
 const loadDataCached = ceych.wrap(loadData);
 
-loadDataCached((err, res) => {
-  // `res` is returned from the server and stored in the cache
-
-  loadDataCached((err, res) => {
-    // `res` is returned from the cache until TTL expiry
-  });
-});
+const miss = loadDataCached(); // returned from the server and stored in the cache
+const hit = loadDataCached(); // returned from the server and stored in the cache
 ```
 
 ## How does it work?
@@ -74,15 +69,19 @@ Returns a wrapped function that implements caching.
 
 ##### Parameters
 
-* `fn` - An asynchronous function to be wrapped. The last argument must be a callback.
+* `fn` - An asynchronous function to be wrapped.
 * `ttl` - _optional_ - Overrides the default TTL.
 * `suffix` - _optional_ - A string appended to cache keys to differentiate between identical functions.
 
 #### `ceych.disableCache()`
 
-Disables the cache client to allow for wrapped methods to be tested as normal.
+Disables the use of the cache. This can be useful if you want to toggle usage of the cache for operational purposes - e.g. for operational purposes, or unit tests.
 
 #### `ceych.invalidate(fn, args, cb)`
 
- Invalidates the current cache entry for the given function and args combination.
+Invalidates the current cache entry for the given function and args combination.
 Note: This takes the original function, _not_ the wrapped function.
+
+#### `ceych.enableCache()`
+
+Re-enables the cache client. This can be useful if you want to toggle usage of the cache for operational purposes - e.g. for operational purposes, or unit tests.

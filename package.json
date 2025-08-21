@@ -1,37 +1,44 @@
 {
   "name": "ceych",
-  "version": "2.1.0",
+  "version": "4.3.0",
   "description": "Wraps any asynchronous function and provides caching of the result",
   "main": "index.js",
   "scripts": {
-    "test": "mocha",
-    "posttest": "npm run lint",
+    "test": "mocha --recursive --exit",
     "lint": "eslint .",
     "coverage": "istanbul cover _mocha -- -R dot"
   },
-  "author": "Cem.Staveley@bbc.co.uk",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "bugs": {
     "url": "https://github.com/bbc/ceych/issues"
   },
   "engines": {
-    "node": ">=4.0.0"
+    "node": ">=14.0.0"
   },
   "dependencies": {
-    "catbox": "^7.1.0",
-    "catbox-memory": "^2.0.1",
-    "lodash": "^4.3.0",
-    "async": "^1.5.0"
+    "@hapi/catbox": "^12.1.1",
+    "@hapi/catbox-memory": "^6.0.1"
   },
   "repository": {
     "type": "git",
     "url": "git+ssh://git@github.com/bbc/ceych.git"
   },
+  "keywords": [
+    "cache",
+    "caching",
+    "asynchronous",
+    "function",
+    "ceych",
+    "wrapper",
+    "promise",
+    "memoize"
+  ],
   "devDependencies": {
-    "chai": "^3.4.1",
-    "eslint": "^1.10.3",
-    "istanbul": "^0.4.1",
-    "mocha": "^6.0.2",
-    "sinon": "^1.17.2"
+    "chai": "^4.3.7",
+    "eslint": "^8.38.0",
+    "istanbul": "^0.4.5",
+    "mocha": "^10.2.0",
+    "sinon": "^15.0.3",
+    "lodash": "^4.17.21"
   }
 }

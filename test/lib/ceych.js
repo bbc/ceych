@@ -1,18 +1,19 @@
 'use strict';
 
 const assert = require('chai').assert;
-const hash = require('../../lib/hash');
-const Catbox = require('catbox').Client;
+const Catbox = require('@hapi/catbox').Client;
 const sinon = require('sinon');
-const sandbox = sinon.sandbox.create();
-const Memory = require('catbox-memory');
+const CatboxMemory = require('@hapi/catbox-memory');
 
+const hash = require('../../lib/hash');
 const Ceych = require('../../lib/ceych');
+
+const sandbox = sinon.createSandbox();
 
 describe('ceych', () => {
   let ceych;
-  let wrappable;
-  let cacheClient;
+  const wrappable = sandbox.stub().returns(Promise.resolve(1));
+  const cacheClient = new Catbox(new CatboxMemory.Engine());
 
   beforeEach(() => {
     sandbox.stub(hash, 'create').returns('hashed');
@@ -30,7 +31,7 @@ describe('ceych', () => {
   });
 
   it('does not error if cache client fails', () => {
-    sandbox.stub(cacheClient, 'start').yields(new Error('DB connection failure'));
+    sandbox.stub(cacheClient, 'start').rejects(new Error('DB connection failure'));
 
     new Ceych({
       cacheClient: cacheClient
@@ -41,7 +42,7 @@ describe('ceych', () => {
     it('defaults to a Catbox Memory cache client', () => {
       const ceych = new Ceych();
       assert.strictEqual(ceych.cache instanceof Catbox, true);
-      assert.strictEqual(ceych.cache.connection instanceof Memory, true);
+      assert.strictEqual(ceych.cache.connection instanceof CatboxMemory.Engine, true);
     });
 
     it('defaults to a TTL of 30 seconds', () => {
@@ -80,48 +81,49 @@ describe('ceych', () => {
         }, Error, 'Can only wrap a function, received [1]');
       });
 
-      it('sets the TTL if the second argument is an integer', (done) => {
-        sandbox.stub(cacheClient, 'set').yields();
+      it('sets the TTL if the second argument is an integer', () => {
+        sandbox.stub(cacheClient, 'set').returns(Promise.resolve());
         sandbox.stub(cacheClient, 'isReady').returns(true);
 
         const func = ceych.wrap(wrappable, 5);
 
-        func((err) => {
-          assert.ifError(err);
-          sinon.assert.calledWith(cacheClient.set, sinon.match.any, sinon.match.any, 5000);
-          done();
-        });
+        return func()
+          .catch(assert.ifError)
+          .then(() => {
+            sinon.assert.calledWith(cacheClient.set, sinon.match.any, sinon.match.any, 5000);
+          });
       });
 
-      it('sets the suffix if the third argument is a string', (done) => {
-        sandbox.stub(cacheClient, 'set').yields();
+      it('sets the suffix if the third argument is a string', () => {
+        sandbox.stub(cacheClient, 'set').returns(Promise.resolve());
         const func = ceych.wrap(wrappable, 5, 'suffix');
 
-        func((err) => {
-          assert.ifError(err);
-          sinon.assert.calledWith(cacheClient.set, sinon.match({
-            id: 'hashed'
-          }));
-          done();
-        });
+        return func()
+          .catch(assert.ifError)
+          .then(() => {
+            sinon.assert.calledWith(cacheClient.set, sinon.match({
+              id: 'hashed'
+            }));
+          });
       });
 
-      it('uses the defaultTTL if the suffix is passed in as the second argument', (done) => {
-        sandbox.stub(cacheClient, 'set').yields();
+      it('uses the defaultTTL if the suffix is passed in as the second argument', () => {
+        sandbox.stub(cacheClient, 'set').returns(Promise.resolve());
         const func = ceych.wrap(wrappable, 'suffix');
 
-        func((err) => {
-          assert.ifError(err);
-          sinon.assert.calledWith(cacheClient.set, sinon.match({
-            id: 'hashed'
-          }), sinon.match.any, 30000);
-          done();
-        });
+        return func()
+          .catch(assert.ifError)
+          .then(() => {
+            sinon.assert.calledWith(cacheClient.set, sinon.match({
+              id: 'hashed'
+            }), sinon.match.any, 30000);
+          });
       });
 
-      it('returns a function that supports sending metrics to StatsD', (done) => {
+      it('returns a function that supports sending metrics to StatsD', async () => {
         const statsClient = {
-          increment: sandbox.stub()
+          increment: sandbox.stub(),
+          timing: sandbox.stub(),
         };
 
         const ceychWithStats = new Ceych({
@@ -130,29 +132,12 @@ describe('ceych', () => {
         });
 
         const func = ceychWithStats.wrap(wrappable);
-
-        func((err) => {
-          assert.ifError(err);
+        try {
+          await func();
+        } catch(err) {
           sinon.assert.calledWith(statsClient.increment, 'ceych.misses');
-          done();
-        });
+        }
       });
-    });
-  });
-
-  describe('.disableCache', () => {
-    it('stops the current cache client', () => {
-      const cacheClient = {
-        start: sandbox.stub().yields(),
-        stop: sandbox.stub().returns()
-      };
-
-      const ceych = new Ceych({
-        cacheClient: cacheClient
-      });
-
-      ceych.disableCache();
-      sinon.assert.called(cacheClient.stop);
     });
   });
 
@@ -266,6 +251,115 @@ describe('ceych', () => {
           });
         }, 200);
       });
+      it('starts the cache client if it is stopped', async () => {
+        const cacheClient = {
+          start: sandbox.stub().resolves(),
+          stop: sandbox.stub().resolves(),
+          isReady: sandbox.stub().returns(false)
+        };
+  
+        const ceych = new Ceych({
+          cacheClient: cacheClient
+        });
+  
+        await ceych.enableCache();
+        sinon.assert.called(cacheClient.start);
+      });
+  
+      it('does nothing if the cache client was already started', async () => {
+        const cacheClient = {
+          start: sandbox.stub().resolves(),
+          stop: sandbox.stub().resolves(),
+          isReady: sandbox.stub().returns(true)
+        };
+  
+        const ceych = new Ceych({
+          cacheClient: cacheClient
+        });
+        cacheClient.start.resetHistory(); // start is called in the constructor, so reset its history
+  
+        await ceych.enableCache();
+        sinon.assert.notCalled(cacheClient.start);
+      });
+    });
+    it('starts the cache client if it is stopped', async () => {
+      const cacheClient = {
+        start: sandbox.stub().resolves(),
+        stop: sandbox.stub().resolves(),
+        isReady: sandbox.stub().returns(false)
+      };
+
+      const ceych = new Ceych({
+        cacheClient: cacheClient
+      });
+
+      await ceych.enableCache();
+      sinon.assert.called(cacheClient.start);
+    });
+
+    it('does nothing if the cache client was already started', async () => {
+      const cacheClient = {
+        start: sandbox.stub().resolves(),
+        stop: sandbox.stub().resolves(),
+        isReady: sandbox.stub().returns(true)
+      };
+
+      const ceych = new Ceych({
+        cacheClient: cacheClient
+      });
+      cacheClient.start.resetHistory(); // start is called in the constructor, so reset its history
+
+      await ceych.enableCache();
+      sinon.assert.notCalled(cacheClient.start);
+    });
+  });
+
+  describe('.disableCache', () => {
+    it('stops the cache client', async () => {
+      const cacheClient = {
+        start: sandbox.stub().resolves(),
+        stop: sandbox.stub().resolves()
+      };
+
+      const ceych = new Ceych({
+        cacheClient: cacheClient
+      });
+
+      await ceych.disableCache();
+      sinon.assert.called(cacheClient.stop);
+    });
+  });
+
+  describe('.enableCache', () => {
+    it('starts the cache client if it is stopped', async () => {
+      const cacheClient = {
+        start: sandbox.stub().resolves(),
+        stop: sandbox.stub().resolves(),
+        isReady: sandbox.stub().returns(false)
+      };
+
+      const ceych = new Ceych({
+        cacheClient: cacheClient
+      });
+
+      await ceych.enableCache();
+      sinon.assert.called(cacheClient.start);
+    });
+
+    it('does nothing if the cache client was already started', async () => {
+      const cacheClient = {
+        start: sandbox.stub().resolves(),
+        stop: sandbox.stub().resolves(),
+        isReady: sandbox.stub().returns(true)
+      };
+
+      const ceych = new Ceych({
+        cacheClient: cacheClient
+      });
+      cacheClient.start.resetHistory(); // start is called in the constructor, so reset its history
+
+      await ceych.enableCache();
+      sinon.assert.notCalled(cacheClient.start);
     });
   });
 });

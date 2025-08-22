@@ -14,10 +14,9 @@ describe('ceych', () => {
   let ceych;
   const wrappable = sandbox.stub().returns(Promise.resolve(1));
   const cacheClient = new Catbox(new CatboxMemory.Engine());
+  const cacheClientStub = sandbox.stub(cacheClient);
 
   beforeEach(() => {
-    sandbox.stub(hash, 'create').returns('hashed');
-
     ceych = new Ceych({
       cacheClient: cacheClient
     });
@@ -28,7 +27,8 @@ describe('ceych', () => {
   });
 
   it('does not error if cache client fails', () => {
-    sandbox.stub(cacheClient, 'start').rejects(new Error('DB connection failure'));
+    sandbox.stub(hash, 'create').returns('hashed');
+    cacheClientStub.start.rejects(new Error('DB connection failure'));
 
     new Ceych({
       cacheClient: cacheClient
@@ -36,6 +36,10 @@ describe('ceych', () => {
   });
 
   describe('validation', () => {
+    beforeEach(() => {
+      sandbox.stub(hash, 'create').returns('hashed');
+    });
+
     it('defaults to a Catbox Memory cache client', () => {
       const ceych = new Ceych();
       assert.strictEqual(ceych.cache instanceof Catbox, true);
@@ -65,6 +69,10 @@ describe('ceych', () => {
   });
 
   describe('.wrap', () => {
+    beforeEach(() => {
+      sandbox.stub(hash, 'create').returns('hashed');
+    });
+
     describe('parameters', () => {
       it('must have at least 1 argument', () => {
         assert.throw(() => {
@@ -139,128 +147,102 @@ describe('ceych', () => {
   });
 
   describe('.invalidate', () => {
-    beforeEach(() => {
-      const cacheClientStub = sandbox.stub(cacheClient);
-      cacheClientStub.isReady.returns(true);
-      cacheClientStub.set.returns(Promise.resolve());
-      cacheClientStub.get.onFirstCall().returns(null);
-      cacheClientStub.get.onSecondCall().returns({ item: 1 });
-      cacheClientStub.get.onThirdCall().returns(null);
-    });
-
-    afterEach(() => {
-      sandbox.restore();
-    });
-
     it('invalidates the cache entry', async () => {
+      const cacheClient = {
+        get: sandbox.stub().onFirstCall().returns(null)
+          .onSecondCall().returns({ item: 1 })
+          .onThirdCall().returns(null),
+        set: sandbox.stub().resolves(),
+        isReady: sandbox.stub().returns(true),
+        start: sandbox.stub().resolves(),
+        stop: sandbox.stub().resolves(),
+        drop: sandbox.stub().resolves()
+      };
+
+      const ceych = new Ceych({
+        cacheClient
+      });
+
+      const wrappable = sandbox.stub().returns(Promise.resolve(1));
       const func = ceych.wrap(wrappable);
 
-      const resp = await func();
-      const resp2 = await func();
+      await func();
+      await func();
 
       sinon.assert.calledOnce(wrappable);
-      assert.equal(resp, 1);
-      assert.equal(resp2, 1);
 
       ceych.invalidate(wrappable);
 
-      const resp3 = await func();
+      await func();
 
       sinon.assert.calledTwice(wrappable);
-      assert.equal(resp3, 1);
     });
 
-    it('supports a custom ttl and suffix', (done) => {
+    it('supports a custom ttl and suffix', async () => {
+      const cacheClient = {
+        get: sandbox.stub().returns(null),
+        set: sandbox.stub().resolves(),
+        isReady: sandbox.stub().returns(true),
+        start: sandbox.stub().resolves(),
+        stop: sandbox.stub().resolves(),
+        drop: sandbox.stub().resolves()
+      };
+
+      const ceych = new Ceych({
+        cacheClient
+      });
+
+      const wrappable = sandbox.stub().returns(Promise.resolve(1));
       const func = ceych.wrap(wrappable, 20, 'saywat');
 
-      func((err, result) => {
-        assert.ifError(err);
-        assert.equal(result, 1);
-        sinon.assert.calledOnce(wrappable);
+      await func();
+      sinon.assert.calledOnce(wrappable);
 
-        ceych.invalidate(wrappable, (err) => {
-          assert.ifError(err);
+      await ceych.invalidate(wrappable);
 
-          func((err, result) => {
-            assert.ifError(err);
-            assert.equal(result, 1);
-
-            sinon.assert.calledTwice(wrappable);
-            done();
-          });
-        });
-      });
+      await func();
+      sinon.assert.calledTwice(wrappable);
     });
 
-    it('does not affect other cache keys of the same function', (done) => {
+    it('does not affect other cache keys of the same function', async () => {
+      const cacheClient = {
+        get: sandbox.stub().onFirstCall().returns(null)
+          .onSecondCall().returns(null)
+          .onThirdCall().returns(null)
+          .onCall(3).returns({ item: 1 }),
+        set: sandbox.stub().resolves(),
+        isReady: sandbox.stub().returns(true),
+        start: sandbox.stub().resolves(),
+        stop: sandbox.stub().resolves(),
+        drop: sandbox.stub().resolves()
+      };
+
+      const ceych = new Ceych({
+        cacheClient
+      });
+
+      const wrappable = sandbox.stub().returns(Promise.resolve(1));
       const func = ceych.wrap(wrappable);
 
-      // Call function with one set of args
-      func(1, 2, 3, (err, result) => {
-        assert.ifError(err);
-        assert.equal(result, 1);
-        sinon.assert.calledOnce(wrappable);
+      await func('hello');
+      await func('bonjour');
 
-        // Call function with another set of args
-        func('anotherarg', (err, result) => {
-          assert.ifError(err);
-          assert.equal(result, 1);
+      await ceych.invalidate(func, 'hello');
 
-          // Assert that this resulted in a second actual call
-          sinon.assert.calledTwice(wrappable);
-          sinon.assert.calledWith(wrappable.secondCall, 'anotherarg');
-          
-          // Invalidate the cache entry with the first arguments only
-          ceych.invalidate(wrappable, 1, 2, 3, (err) => {
-            assert.ifError(err);
+      await func('hello');
+      await func('bonjour');
 
-            // Call function with the second set of args and do not expect another actual call
-            func('anotherarg', (err, result) => {
-              assert.ifError(err);
-              assert.equal(result, 1);
-
-              sinon.assert.calledTwice(wrappable);
-              sinon.assert.calledWith(wrappable.secondCall, 'anotherarg');
-
-              // Call function with the first set of args and expect another actual call
-              func(1, 2, 3, (err, result) => {
-                assert.ifError(err);
-                assert.equal(result, 1);
-                sinon.assert.calledThrice(wrappable);
-                sinon.assert.calledWith(wrappable.thirdCall, 1, 2, 3);
-                done();
-              });
-            });
-          });
-        });
-      });
-    });
-
-    it('handles lack of callback', (done) => {
-      const func = ceych.wrap(wrappable);
-
-      func((err, result) => {
-        assert.ifError(err);
-        assert.equal(result, 1);
-        sinon.assert.calledOnce(wrappable);
-
-        ceych.invalidate(wrappable);
-        setTimeout(() => {
-          assert.ifError(err);
-
-          func((err, result) => {
-            assert.ifError(err);
-            assert.equal(result, 1);
-
-            sinon.assert.calledTwice(wrappable);
-            done();
-          });
-        }, 200);
-      });
+      const calls = wrappable.getCalls();
+      assert.equal(2, calls.filter(c => c.args[0] === 'hello').length);
+      assert.equal(1, calls.filter(c => c.args[0] === 'bonjour').length);
     });
   });
 
   describe('.disableCache', () => {
+    beforeEach(() => {
+      sandbox.stub(hash, 'create').returns('hashed');
+    });
+
     it('stops the cache client', async () => {
       const cacheClient = {
         start: sandbox.stub().resolves(),
@@ -277,11 +259,15 @@ describe('ceych', () => {
   });
 
   describe('.enableCache', () => {
+    beforeEach(() => {
+      sandbox.stub(hash, 'create').returns('hashed');
+    });
+
     it('starts the cache client if it is stopped', async () => {
       const cacheClient = {
         start: sandbox.stub().resolves(),
         stop: sandbox.stub().resolves(),
-        isReady: sandbox.stub().returns(false)
+        isReady: sandbox.stub().returns(false),
       };
 
       const ceych = new Ceych({

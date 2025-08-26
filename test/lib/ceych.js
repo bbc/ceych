@@ -267,7 +267,7 @@ describe('ceych', () => {
       const cacheClient = {
         start: sandbox.stub().resolves(),
         stop: sandbox.stub().resolves(),
-        isReady: sandbox.stub().returns(false),
+        isReady: sandbox.stub().returns(false)
       };
 
       const ceych = new Ceych({

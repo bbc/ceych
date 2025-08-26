@@ -172,6 +172,7 @@ describe('ceych', () => {
       sinon.assert.calledOnce(wrappable);
 
       ceych.invalidate(wrappable);
+      sinon.assert.calledOnce(cacheClient.drop);
 
       await func();
 
@@ -180,7 +181,10 @@ describe('ceych', () => {
 
     it('supports a custom ttl and suffix', async () => {
       const cacheClient = {
-        get: sandbox.stub().returns(null),
+        get: sandbox.stub()
+          .onFirstCall().returns(null)
+          .onSecondCall().returns({ item: 1 })
+          .onThirdCall().returns(null),
         set: sandbox.stub().resolves(),
         isReady: sandbox.stub().returns(true),
         start: sandbox.stub().resolves(),
@@ -195,6 +199,7 @@ describe('ceych', () => {
       const wrappable = sandbox.stub().returns(Promise.resolve(1));
       const func = ceych.wrap(wrappable, 20, 'saywat');
 
+      await func();
       await func();
       sinon.assert.calledOnce(wrappable);
 
@@ -235,6 +240,39 @@ describe('ceych', () => {
       const calls = wrappable.getCalls();
       assert.equal(2, calls.filter(c => c.args[0] === 'hello').length);
       assert.equal(1, calls.filter(c => c.args[0] === 'bonjour').length);
+    });
+
+    it('does not affect other cache keys of the same function, multi-argument', async () => {
+      const cacheClient = {
+        get: sandbox.stub().onFirstCall().returns(null)
+          .onSecondCall().returns(null)
+          .onThirdCall().returns(null)
+          .onCall(3).returns({ item: 1 }),
+        set: sandbox.stub().resolves(),
+        isReady: sandbox.stub().returns(true),
+        start: sandbox.stub().resolves(),
+        stop: sandbox.stub().resolves(),
+        drop: sandbox.stub().resolves()
+      };
+
+      const ceych = new Ceych({
+        cacheClient
+      });
+
+      const wrappable = sandbox.stub().returns(Promise.resolve(1));
+      const func = ceych.wrap(wrappable);
+
+      await func('hello');
+      await func('hello', 'bonjour');
+
+      await ceych.invalidate(func, 'hello');
+
+      await func('hello');
+      await func('hello', 'bonjour');
+
+      const calls = wrappable.getCalls();
+      assert.equal(2, calls.filter(c => c.args[0] === 'hello' && c.args.length === 1).length);
+      assert.equal(1, calls.filter(c => c.args.join(',') === 'hello,bonjour').length);
     });
   });
 

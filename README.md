@@ -75,8 +75,7 @@ Returns a wrapped function that implements caching.
 
 #### `ceych.invalidate(fn)`
 
-Invalidates the current cache entry for the given function and args combination.
-Note: This takes the original function, _not_ the wrapped function.
+Invalidates the current cache entry for the given function and args combination. `fn` should be the wrapped function wrapped via `ceych.wrap()`.
 
 #### `ceych.disableCache()`
 

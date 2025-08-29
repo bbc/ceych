@@ -73,6 +73,10 @@ Returns a wrapped function that implements caching.
 * `ttl` - _optional_ - Overrides the default TTL.
 * `suffix` - _optional_ - A string appended to cache keys to differentiate between identical functions.
 
+#### `ceych.invalidate(fn)`
+
+Invalidates the current cache entry for the given function and args combination. `fn` should be the wrapped function wrapped via `ceych.wrap()`.
+
 #### `ceych.disableCache()`
 
 Disables the use of the cache. This can be useful if you want to toggle usage of the cache for operational purposes - e.g. for operational purposes, or unit tests.

@@ -1,6 +1,6 @@
 {
   "name": "ceych",
-  "version": "4.4.0",
+  "version": "4.4.1",
   "description": "Wraps any asynchronous function and provides caching of the result",
   "main": "index.js",
   "scripts": {

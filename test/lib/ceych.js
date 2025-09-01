@@ -274,6 +274,45 @@ describe('ceych', () => {
       assert.equal(2, calls.filter(c => c.args[0] === 'hello' && c.args.length === 1).length);
       assert.equal(1, calls.filter(c => c.args.join(',') === 'hello,bonjour').length);
     });
+
+    it('increments a metric for invalidation', async () => {
+      const cacheClient = {
+        get: sandbox.stub().onFirstCall().returns(null)
+          .onSecondCall().returns({ item: 1 })
+          .onThirdCall().returns(null),
+        set: sandbox.stub().resolves(),
+        isReady: sandbox.stub().returns(true),
+        start: sandbox.stub().resolves(),
+        stop: sandbox.stub().resolves(),
+        drop: sandbox.stub().resolves()
+      };
+
+      const statsClient = {
+        increment: sandbox.stub(),
+        timing: sandbox.stub(),
+      };
+
+      const ceych = new Ceych({
+        cacheClient,
+        statsClient
+      });
+
+      const wrappable = sandbox.stub().returns(Promise.resolve(1));
+      const func = ceych.wrap(wrappable);
+
+      await func();
+      await func();
+
+      sinon.assert.calledOnce(wrappable);
+
+      ceych.invalidate(wrappable);
+      sinon.assert.calledOnce(cacheClient.drop);
+      sinon.assert.calledWithExactly(statsClient.increment, "ceych.invalidate");
+
+      await func();
+
+      sinon.assert.calledTwice(wrappable);
+    });
   });
 
   describe('.disableCache', () => {

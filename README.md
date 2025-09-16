@@ -73,9 +73,14 @@ Returns a wrapped function that implements caching.
 * `ttl` - _optional_ - Overrides the default TTL.
 * `suffix` - _optional_ - A string appended to cache keys to differentiate between identical functions.
 
-#### `ceych.invalidate(fn)`
+#### `ceych.invalidate(funcOrOpts, ...args)`
 
-Invalidates the current cache entry for the given function and args combination. `fn` should be the wrapped function wrapped via `ceych.wrap()`.
+Invalidates the current cache entry for the given function and args combination. The function passed should be the unwrapped, initial function.
+
+##### Parameters
+
+* `funcOrOpts` - Either a function or a set of options of the format `{ func: yourFunction, suffix: 'yourSuffix' }` if you wish to include a suffix.
+* `...args` - The args that you passed to the wrapped function call which initially stored the cache entry.
 
 #### `ceych.disableCache()`
 

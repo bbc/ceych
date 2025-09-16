@@ -113,17 +113,26 @@ describe('ceych', () => {
           });
       });
 
-      it('uses the defaultTTL if the suffix is passed in as the second argument', () => {
-        sandbox.stub(cacheClient, 'set').returns(Promise.resolve());
-        const func = ceych.wrap(wrappable, 'suffix');
+      it('throws if incorrect type supplied as ttl', async () => {
+        try {
+          ceych.wrap(wrappable, 'invalid_ttl');
+        } catch (error) {
+          assert(true);
+          return;
+        }
 
-        return func()
-          .catch(assert.ifError)
-          .then(() => {
-            sinon.assert.calledWith(cacheClient.set, sinon.match({
-              id: 'hashed'
-            }), sinon.match.any, 30000);
-          });
+        assert(false, 'expected ceych.wrap to throw');
+      });
+
+      it('throws if incorrect type supplied as suffix', async () => {
+        try {
+          ceych.wrap(wrappable, 100, { badSuffix: true });
+        } catch (error) {
+          assert(true);
+          return;
+        }
+
+        assert(false, 'expected ceych.wrap to throw');
       });
 
       it('returns a function that supports sending metrics to StatsD', async () => {

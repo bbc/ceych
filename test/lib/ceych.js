@@ -7,6 +7,7 @@ const CatboxMemory = require('@hapi/catbox-memory');
 
 const hash = require('../../lib/hash');
 const Ceych = require('../../lib/ceych');
+const { createCacheKey } = require('../../lib/utils');
 
 const sandbox = sinon.createSandbox();
 
@@ -148,15 +149,17 @@ describe('ceych', () => {
 
   describe('.invalidate', () => {
     it('invalidates the cache entry', async () => {
+      const getStub = sandbox.stub().onFirstCall().returns(null)
+        .onSecondCall().returns({ item: 1 })
+        .onThirdCall().returns(null);
+      const dropStub = sandbox.stub().resolves();
       const cacheClient = {
-        get: sandbox.stub().onFirstCall().returns(null)
-          .onSecondCall().returns({ item: 1 })
-          .onThirdCall().returns(null),
+        get: getStub,
         set: sandbox.stub().resolves(),
         isReady: sandbox.stub().returns(true),
         start: sandbox.stub().resolves(),
         stop: sandbox.stub().resolves(),
-        drop: sandbox.stub().resolves()
+        drop: dropStub
       };
 
       const ceych = new Ceych({
@@ -164,62 +167,76 @@ describe('ceych', () => {
       });
 
       const wrappable = sandbox.stub().returns(Promise.resolve(1));
+      const cacheKey = createCacheKey(wrappable, [], '');
       const func = ceych.wrap(wrappable);
 
       await func();
       await func();
-
       sinon.assert.calledOnce(wrappable);
+      sinon.assert.calledTwice(getStub);
+      sinon.assert.alwaysCalledWith(getStub, cacheKey);
 
       ceych.invalidate(wrappable);
       sinon.assert.calledOnce(cacheClient.drop);
 
       await func();
 
+      sinon.assert.calledThrice(getStub);
+      sinon.assert.alwaysCalledWith(getStub, cacheKey);
       sinon.assert.calledTwice(wrappable);
     });
 
     it('supports a custom ttl and suffix', async () => {
-      const cacheClient = {
-        get: sandbox.stub()
+      const getStub = sandbox.stub()
           .onFirstCall().returns(null)
           .onSecondCall().returns({ item: 1 })
-          .onThirdCall().returns(null),
+          .onThirdCall().returns(null);
+      const dropStub = sandbox.stub().resolves();
+
+      const cacheClient = {
+        get: getStub,
         set: sandbox.stub().resolves(),
         isReady: sandbox.stub().returns(true),
         start: sandbox.stub().resolves(),
         stop: sandbox.stub().resolves(),
-        drop: sandbox.stub().resolves()
+        drop: dropStub
       };
 
       const ceych = new Ceych({
         cacheClient
       });
 
+      const suffix = 'saywat'
       const wrappable = sandbox.stub().returns(Promise.resolve(1));
-      const func = ceych.wrap(wrappable, 20, 'saywat');
+      const cacheKey = createCacheKey(wrappable, [], suffix);
+      const func = ceych.wrap(wrappable, 20, suffix);
 
       await func();
       await func();
       sinon.assert.calledOnce(wrappable);
+      sinon.assert.calledTwice(getStub);
+      sinon.assert.alwaysCalledWith(getStub, cacheKey);
 
-      await ceych.invalidate(wrappable);
+      await ceych.invalidate({ func: wrappable, suffix });
+      sinon.assert.calledWith(dropStub, cacheKey);
 
       await func();
       sinon.assert.calledTwice(wrappable);
     });
 
     it('does not affect other cache keys of the same function', async () => {
+      const getStub = sandbox.stub().onFirstCall().returns(null)
+        .onSecondCall().returns(null)
+        .onThirdCall().returns(null)
+        .onCall(3).returns({ item: 1 });
+      const dropStub = sandbox.stub().resolves();
       const cacheClient = {
-        get: sandbox.stub().onFirstCall().returns(null)
-          .onSecondCall().returns(null)
-          .onThirdCall().returns(null)
-          .onCall(3).returns({ item: 1 }),
+        get: getStub,
         set: sandbox.stub().resolves(),
         isReady: sandbox.stub().returns(true),
         start: sandbox.stub().resolves(),
         stop: sandbox.stub().resolves(),
-        drop: sandbox.stub().resolves()
+        drop: dropStub
       };
 
       const ceych = new Ceych({
@@ -227,12 +244,19 @@ describe('ceych', () => {
       });
 
       const wrappable = sandbox.stub().returns(Promise.resolve(1));
+      const helloCacheKey = createCacheKey(wrappable, ['hello'], '');
+      const bonjourCacheKey = createCacheKey(wrappable, ['bonjour'], '');
       const func = ceych.wrap(wrappable);
 
       await func('hello');
       await func('bonjour');
+      sinon.assert.calledTwice(wrappable);
+      sinon.assert.calledWith(getStub, helloCacheKey);
+      sinon.assert.calledWith(getStub, bonjourCacheKey);
 
-      await ceych.invalidate(func, 'hello');
+      await ceych.invalidate(wrappable, 'hello');
+      sinon.assert.calledWith(dropStub, helloCacheKey);
+      sinon.assert.neverCalledWith(dropStub, bonjourCacheKey);
 
       await func('hello');
       await func('bonjour');
@@ -243,16 +267,18 @@ describe('ceych', () => {
     });
 
     it('does not affect other cache keys of the same function, multi-argument', async () => {
+      const getStub = sandbox.stub().onFirstCall().returns(null)
+        .onSecondCall().returns(null)
+        .onThirdCall().returns(null)
+        .onCall(3).returns({ item: 1 });
+      const dropStub = sandbox.stub().resolves();
       const cacheClient = {
-        get: sandbox.stub().onFirstCall().returns(null)
-          .onSecondCall().returns(null)
-          .onThirdCall().returns(null)
-          .onCall(3).returns({ item: 1 }),
+        get: getStub,
         set: sandbox.stub().resolves(),
         isReady: sandbox.stub().returns(true),
         start: sandbox.stub().resolves(),
         stop: sandbox.stub().resolves(),
-        drop: sandbox.stub().resolves()
+        drop: dropStub
       };
 
       const ceych = new Ceych({
@@ -260,12 +286,19 @@ describe('ceych', () => {
       });
 
       const wrappable = sandbox.stub().returns(Promise.resolve(1));
+      const helloCacheKey = createCacheKey(wrappable, ['hello'], '');
+      const helloBonjourCacheKey = createCacheKey(wrappable, ['hello', 'bonjour'], '');
       const func = ceych.wrap(wrappable);
 
       await func('hello');
       await func('hello', 'bonjour');
+      sinon.assert.calledTwice(wrappable);
+      sinon.assert.calledWith(getStub, helloCacheKey);
+      sinon.assert.calledWith(getStub, helloBonjourCacheKey);
 
-      await ceych.invalidate(func, 'hello');
+      await ceych.invalidate(wrappable, 'hello');
+      sinon.assert.calledWith(dropStub, helloCacheKey);
+      sinon.assert.neverCalledWith(dropStub, helloBonjourCacheKey);
 
       await func('hello');
       await func('hello', 'bonjour');

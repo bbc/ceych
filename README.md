@@ -80,7 +80,7 @@ Invalidates the current cache entry for the given function and args combination.
 ##### Parameters
 
 * `funcOrOpts` - Either a function or a set of options of the format `{ func: yourFunction, suffix: 'yourSuffix' }` if you wish to include a suffix.
-* `...args` - The args that you passed to the already wrapped function to initially store the cache entry.
+* `...args` - The args that you passed to the wrapped function call which initially stored the cache entry.
 
 #### `ceych.disableCache()`
 

@@ -13,7 +13,8 @@
     "url": "https://github.com/bbc/ceych/issues"
   },
   "engines": {
-    "node": ">=14.0.0"
+    "node": ">=14.0.0",
+    "pnpm": ">=10"
   },
   "dependencies": {
     "@hapi/catbox": "^12.1.1",

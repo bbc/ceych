@@ -6,7 +6,7 @@
   "scripts": {
     "test": "mocha --recursive --exit",
     "lint": "eslint .",
-    "coverage": "istanbul cover _mocha -- -R dot"
+    "coverage": "nyc mocha && nyc report --reporter=html && nyc report --reporter=json-summary"
   },
   "license": "Apache-2.0",
   "bugs": {
@@ -37,9 +37,9 @@
   "devDependencies": {
     "chai": "^4.3.7",
     "eslint": "^8.38.0",
-    "istanbul": "^0.4.5",
+    "lodash": "^4.17.21",
     "mocha": "^10.2.0",
-    "sinon": "^15.0.3",
-    "lodash": "^4.17.21"
+    "nyc": "^17.1.0",
+    "sinon": "^15.0.3"
   }
 }

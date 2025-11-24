@@ -5,7 +5,7 @@
 ## Installation
 
 ```
-npm install --save ceych
+pnpm install --save ceych
 ```
 
 ## Usage

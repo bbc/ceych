@@ -215,7 +215,7 @@ describe('ceych', () => {
         cacheClient
       });
 
-      const suffix = 'saywat'
+      const suffix = 'saywat';
       const wrappable = sandbox.stub().returns(Promise.resolve(1));
       const cacheKey = createCacheKey(wrappable, [], suffix);
       const func = ceych.wrap(wrappable, 20, suffix);
@@ -271,8 +271,8 @@ describe('ceych', () => {
       await func('bonjour');
 
       const calls = wrappable.getCalls();
-      assert.equal(2, calls.filter(c => c.args[0] === 'hello').length);
-      assert.equal(1, calls.filter(c => c.args[0] === 'bonjour').length);
+      assert.equal(2, calls.filter((c) => c.args[0] === 'hello').length);
+      assert.equal(1, calls.filter((c) => c.args[0] === 'bonjour').length);
     });
 
     it('does not affect other cache keys of the same function, multi-argument', async () => {
@@ -313,8 +313,8 @@ describe('ceych', () => {
       await func('hello', 'bonjour');
 
       const calls = wrappable.getCalls();
-      assert.equal(2, calls.filter(c => c.args[0] === 'hello' && c.args.length === 1).length);
-      assert.equal(1, calls.filter(c => c.args.join(',') === 'hello,bonjour').length);
+      assert.equal(2, calls.filter((c) => c.args[0] === 'hello' && c.args.length === 1).length);
+      assert.equal(1, calls.filter((c) => c.args.join(',') === 'hello,bonjour').length);
     });
 
     it('increments a metric for invalidation', async () => {
@@ -349,7 +349,7 @@ describe('ceych', () => {
 
       ceych.invalidate(wrappable);
       sinon.assert.calledOnce(cacheClient.drop);
-      sinon.assert.calledWithExactly(statsClient.increment, "ceych.invalidate");
+      sinon.assert.calledWithExactly(statsClient.increment, 'ceych.invalidate');
 
       await func();
 

@@ -287,7 +287,7 @@ describe('ceych', () => {
   describe('.set', () => {
     it('updates the value of an existing key in the cache', async () => {
       cacheClient.get.onFirstCall().returns(null);
-      cacheClient.get.onSecondCall().returns(100);
+      cacheClient.get.onSecondCall().returns({ item: 100 });
       const cacheKey = createCacheKey(wrappable, [], '');
       const wrapped = ceych.wrap(wrappable);
 

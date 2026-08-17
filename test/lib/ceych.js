@@ -318,7 +318,7 @@ describe('ceych', () => {
       const setArgs = cacheClient.set.getCall(0).args;
       assert.strictEqual(setArgs[0].id, cacheKey.id);
       assert.strictEqual(setArgs[1], 100);
-      assert.strictEqual(setArgs[2], 15);
+      assert.strictEqual(setArgs[2], 15000);
     });
 
     it('should support a suffix', async () => {

@@ -77,6 +77,18 @@ Returns a wrapped function that implements caching.
 
 Invalidates the current cache entry for the given function and args combination. The function passed should be the unwrapped, initial function.
 
+#### `ceych.set()
+
+Use this to manually sets the cache entry for the given function and args combination. You can use this to overrwrite an existing cache entry to a newer one.
+
+The new cache key will have a TTL set randomly between this.defaultTtl/2 and this.defaultTtl. This is to ensure that when manually setting a lot of cache keys at the same time, they don't end up all expiring at the same time and causing lots of caches misses.
+
+##### Parameters
+
+* `funcOrOpts` - Either a function or a set of options of the format `{ func: yourFunction, suffix: 'yourSuffix' }` if you wish to include a suffix.
+* `...args` - The args that you passed to the wrapped function call which initially stored the cache entry.
+* `updatedValue` - The new value to store in the cache.
+
 ##### Parameters
 
 * `funcOrOpts` - Either a function or a set of options of the format `{ func: yourFunction, suffix: 'yourSuffix' }` if you wish to include a suffix.

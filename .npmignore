@@ -1,0 +1,5 @@
+.github/*
+test/*
+.eslint*
+.nvmrc
+pnpm-workspace.yaml

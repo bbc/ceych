@@ -81,7 +81,7 @@ Invalidates the current cache entry for the given function and args combination.
 
 Use this to manually sets the cache entry for the given function and args combination. You can use this to overrwrite an existing cache entry to a newer one.
 
-The new cache key will have a TTL set randomly between this.defaultTtl/2 and this.defaultTtl. This is to ensure that when manually setting a lot of cache keys at the same time, they don't end up all expiring at the same time and causing lots of caches misses.
+The new cache key will have a TTL (time to live) set randomly between this.defaultTtl/2 and this.defaultTtl. This is to ensure that when manually setting a lot of cache keys at the same time, they don't end up all expiring at the same time and causing lots of caches misses.
 
 ##### Parameters
 

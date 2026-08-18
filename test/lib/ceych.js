@@ -295,7 +295,7 @@ describe('ceych', () => {
       await wrapped();
 
       // Manually set a new value in the cache
-      ceych.set(wrappable, [], 100);
+      ceych.set(wrappable, 100);
 
       await wrapped();
 
@@ -312,7 +312,7 @@ describe('ceych', () => {
       const wrapped = ceych.wrap(wrappable);
       sinon.stub(Math, 'random').returns(1);
 
-      ceych.set(wrappable, [], 100);
+      ceych.set(wrappable, 100);
 
       sinon.assert.calledOnce(cacheClient.set);
       const setArgs = cacheClient.set.getCall(0).args;
@@ -325,7 +325,7 @@ describe('ceych', () => {
       const cacheKey = createCacheKey(wrappable, [], 'suffix');
       const wrapped = ceych.wrap(wrappable);
 
-      ceych.set({ func: wrappable, suffix: 'suffix' }, [], 10);
+      ceych.set({ func: wrappable, suffix: 'suffix' }, 10);
 
       const setArgs = cacheClient.set.getCall(0).args;
       assert.strictEqual(setArgs[0].id, cacheKey.id);
@@ -342,7 +342,7 @@ describe('ceych', () => {
 
       sinon.assert.calledTwice(cacheClient.set);
 
-      ceych.set(wrappable, ['hello'], 10);
+      ceych.set(wrappable, 10, 'hello');
 
       sinon.assert.calledThrice(cacheClient.set);
 
@@ -363,7 +363,7 @@ describe('ceych', () => {
 
       const func = ceych.wrap(wrappable);
 
-      ceych.set(wrappable, [], 10);
+      ceych.set(wrappable, 10);
       sinon.assert.calledWithExactly(statsClient.increment, 'ceych.set');
     });
   });

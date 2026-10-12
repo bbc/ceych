@@ -35,12 +35,12 @@
     "memoize"
   ],
   "devDependencies": {
-    "chai": "^4.3.7",
-    "eslint": "^8.38.0",
+    "chai": "^6.3.0",
+    "eslint": "^10.12.0",
     "lodash": "^4.17.21",
-    "mocha": "^10.2.0",
-    "nyc": "^17.1.0",
-    "sinon": "^15.0.3"
+    "mocha": "^12.0.3",
+    "nyc": "^18.0.0",
+    "sinon": "^22.1.0"
   },
   "packageManager": "pnpm@11.5.1+sha512.93f7b57422ea7068257235b4c16eb60762eb68e1dc23723199cc739043ea9be2c4143274a399d8c6defa2b1176226d9ca1c4b63482d6200c1a8fbaa78c1d1485"
 }
